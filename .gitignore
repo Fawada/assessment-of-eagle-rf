@@ -1,0 +1,22 @@
+# The owner's code and data are not part of this repository
+owner-code/
+data/
+*.hdf5
+*.h5
+
+# Model files (7.3 GB each) and raw run folders
+*.pkl
+*.npy
+baseline_*/
+scaling_*/
+smoke/
+bench_out/
+rf_baseline_*.out
+rf_scaling_*.out
+
+# Python / editor
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
