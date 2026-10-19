@@ -127,7 +127,7 @@ These were found by reading the script before running it.
 
 | Issue | Effect | How it was handled |
 |---|---|---|
-| All paths hard-coded to the owner's directories (`/cosma8/data/dp004/dc-sori1/...`), including where outputs are written | Another user cannot run it; if they had write access, it would **overwrite the owner's saved model** | The original script was **not run**. A benchmark harness with configurable paths was used instead (below) |
+| All paths hard-coded to the owner's directories (`/cosma8/data/../../...`), including where outputs are written | Another user cannot run it; if they had write access, it would **overwrite the owner's saved model** | The original script was **not run**. A benchmark harness with configurable paths was used instead (below) |
 | `plt.rc('text', usetex=True)` | Needs LaTeX on the compute node; if missing, the script crashes at the very end, after training | Harness uses LaTeX only when it is installed (`--usetex` is passed automatically by `run_baseline.sh` if `latex` is found) |
 | `test = True` prints arrays; the plotting section prints full prediction arrays | Terminal output during the run (an "assessment crime" in the guidebook) | Printing off by default in the harness (`--verbose` restores it) |
 | `n_jobs = 16` fixed | Cannot scale with the node | Made a harness argument |
