@@ -18,11 +18,12 @@
 
 #SBATCH --job-name=rf_highlevel
 #SBATCH --partition=cosma8
-#SBATCH --account=dr004
+#SBATCH --account=CHANGE_ME          # your COSMA project account
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --exclusive
 #SBATCH --time=01:30:00
+# Data: export EAGLE_DATA_ROOT=/path/to/eagle_data before sbatch (sbatch passes it to the job).
 #SBATCH --output=rf_highlevel_%j.out
 
 source ~/venvs/eagle-rf/bin/activate
@@ -35,8 +36,8 @@ IO_CORES=${IO_CORES:-16}       # threads for the I/O runs; 16 = owner's setting
 DATA_ROOT=${DATA_ROOT:-}       # empty = harness default (owner's COSMA8 data directory)
 
 # Output locations for the 7.3 GB model in Part D (each file is deleted after it is measured)
-LUSTRE_DIR=${LUSTRE_DIR:-/cosma8/data/dr004/dc-qais1/eagle-rf-io}
-VAST_DIR=${VAST_DIR:-/cosma/apps/durham/dc-qais1/eagle-rf-io}
+LUSTRE_DIR=${LUSTRE_DIR:-/cosma8/data/CHANGE_ME_PROJECT/$USER/eagle-rf-io}
+VAST_DIR=${VAST_DIR:-/cosma/apps/CHANGE_ME_GROUP/$USER/eagle-rf-io}
 SHM_DIR=/dev/shm/eagle-rf-io-${SLURM_JOB_ID:-local}
 
 COMPILER_MODULE=gnu_comp/14.1.0   # COSMA8: likwid (and possibly darshan) refuse to load without a compiler module
@@ -46,6 +47,12 @@ DARSHAN_RUNTIME_MODULE=darshan-runtime/3.4.6
 DARSHAN_UTIL_MODULE=darshan-util/3.4.6
 
 set -u
+if [ -z "${DATA_ROOT:-}" ] && { [ -z "${EAGLE_DATA_ROOT:-}" ] || [ "${EAGLE_DATA_ROOT}" = CHANGE_ME ]; }; then
+  echo "Set EAGLE_DATA_ROOT to the EAGLE data directory (export it before sbatch)"; exit 1
+fi
+case "${LUSTRE_DIR:-} ${VAST_DIR:-}" in *CHANGE_ME*)
+  echo "Set LUSTRE_DIR / VAST_DIR (writable output folders) and --account before submitting"; exit 1;;
+esac
 HERE="$(pwd)"
 BENCH="$HERE/rf_benchmark.py"
 CPULIST="$HERE/cpulist.py"

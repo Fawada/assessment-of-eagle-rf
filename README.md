@@ -66,6 +66,7 @@ double as worked examples for assessing other small, CPU-only Python codes.
 python3 -m venv ~/venvs/eagle-rf && source ~/venvs/eagle-rf/bin/activate
 pip install numpy h5py scikit-learn joblib scipy matplotlib
 cd scripts
+export EAGLE_DATA_ROOT=/path/to/eagle_data      # folder containing L0100N1504/ etc. (not published here)
 python3 rf_benchmark.py 0100 1504 0 --outdir smoke --n-jobs 4 --n-estimators 10   # smoke test
 ```
 

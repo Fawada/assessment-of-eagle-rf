@@ -74,7 +74,7 @@ timing.
 
 | Item | Value |
 |---|---|
-| Partition / account | `cosma8` / `dr004` |
+| Partition / account | `cosma8` / the assessor's project account |
 | Nodes | 1, `--exclusive` (whole node, no other jobs) |
 | Node type | 2 × AMD EPYC 7H12 (64 cores each): 128 physical cores, SMT 2 (256 hardware threads), 8 NUMA domains of 16 cores, 1006 GiB RAM |
 | Environment | Python venv; `OMP_NUM_THREADS=OPENBLAS_NUM_THREADS=MKL_NUM_THREADS=1` |
@@ -401,7 +401,9 @@ actionable.
 cd scripts
 source ~/venvs/eagle-rf/bin/activate
 mkdir -p /cosma8/data/<project>/<user>/eagle-rf-io /cosma/apps/<site>/<user>/eagle-rf-io
-# edit --account and the LUSTRE_DIR / VAST_DIR defaults in run_highlevel.sh, then:
+export EAGLE_DATA_ROOT=/path/to/eagle_data      # the owner's data directory (not published)
+# edit --account and the LUSTRE_DIR / VAST_DIR defaults in run_highlevel.sh
+# (the scripts stop with a message if any CHANGE_ME placeholder is left), then:
 sbatch run_highlevel.sh                      # ~25 min: topology, core, scaling, NUMA, I/O, Darshan attempt
 python3 summarise_highlevel.py highlevel_<jobid> --unpinned <optional earlier unpinned sweep>
 ```

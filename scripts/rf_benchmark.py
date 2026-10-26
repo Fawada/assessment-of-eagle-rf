@@ -44,7 +44,9 @@ import h5py
 import numpy as np
 
 RANDOM_STATE = 1  # as in the original script
-DEFAULT_DATA_ROOT = "/cosma8/data/dp004/dc-sori1/data/eagle_data"
+# Data location: --data-root, or the EAGLE_DATA_ROOT environment variable. No default is built in,
+# so the owner's directory is not published. Example: export EAGLE_DATA_ROOT=/path/to/eagle_data
+DEFAULT_DATA_ROOT = os.environ.get("EAGLE_DATA_ROOT")
 
 # Constants and radial binning, unchanged from the original script
 LOGR_MIN = -2
@@ -76,7 +78,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("lbox", help="Box size string as in the file layout, e.g. 0100")
     p.add_argument("npart", help="Particle number string, e.g. 1504")
     p.add_argument("z", help="Redshift string as in the file name eagle_z<z>.hdf5")
-    p.add_argument("--data-root", default=DEFAULT_DATA_ROOT, help="Directory containing L<lbox>N<npart>/")
+    p.add_argument("--data-root", default=DEFAULT_DATA_ROOT,
+                   help="Directory containing L<lbox>N<npart>/ (default: $EAGLE_DATA_ROOT)")
     p.add_argument("--outdir", type=Path, default=Path("bench_out"))
     p.add_argument("--tag", default=None, help="Label for this run (default built from settings)")
     p.add_argument("--n-jobs", type=int, default=16, help="Threads for fit/predict (original: 16)")
@@ -182,6 +185,8 @@ def make_plot(model, features, X_test, dens_prof_full, logr, r_mask, rho_crit, p
 
 def main() -> None:
     args = parse_args()
+    if not args.data_root:
+        raise SystemExit("No data location: pass --data-root /path/to/eagle_data or set EAGLE_DATA_ROOT")
     timings: dict[str, float] = {}
     mod = "L%sN%s" % (args.lbox, args.npart)
     tag = args.tag or f"{mod}_z{args.z}_nj{args.n_jobs}_ne{args.n_estimators}" + (

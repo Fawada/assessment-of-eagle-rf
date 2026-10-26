@@ -20,6 +20,7 @@
 #SBATCH --ntasks=1
 #SBATCH --exclusive
 #SBATCH --time=01:00:00
+# Data: export EAGLE_DATA_ROOT=/path/to/eagle_data before sbatch (sbatch passes it to the job).
 #SBATCH --output=rf_scaling_%j.out
 
 # ---------------- ENV SETUP (edit) ----------------
@@ -41,6 +42,9 @@ NCORES=$(( SOCKETS * CORES_PER_SOCKET ))
 JOBS_LIST=${JOBS_LIST:-"1 2 4 8 16 32 64 $NCORES"}
 
 set -u
+if [ -z "${DATA_ROOT:-}" ] && { [ -z "${EAGLE_DATA_ROOT:-}" ] || [ "${EAGLE_DATA_ROOT}" = CHANGE_ME ]; }; then
+  echo "Set EAGLE_DATA_ROOT to the EAGLE data directory (export it before sbatch)"; exit 1
+fi
 HERE="$(pwd)"
 OUT="$HERE/scaling_${SLURM_JOB_ID:-local}"
 mkdir -p "$OUT"

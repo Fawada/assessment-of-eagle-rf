@@ -11,11 +11,12 @@
 
 #SBATCH --job-name=rf_followup
 #SBATCH --partition=cosma8
-#SBATCH --account=dr004
+#SBATCH --account=CHANGE_ME          # your COSMA project account
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --exclusive
 #SBATCH --time=00:30:00
+# Data: export EAGLE_DATA_ROOT=/path/to/eagle_data before sbatch (sbatch passes it to the job).
 #SBATCH --output=rf_followup_%j.out
 
 source ~/venvs/eagle-rf/bin/activate
@@ -26,7 +27,7 @@ N_EST=${N_EST:-1000}
 RUN_CORE=${RUN_CORE:-1}          # set RUN_CORE=0 to rerun only the Darshan step
 IO_CORES=${IO_CORES:-16}
 DATA_ROOT=${DATA_ROOT:-}
-LUSTRE_DIR=${LUSTRE_DIR:-/cosma8/data/dr004/dc-qais1/eagle-rf-io}
+LUSTRE_DIR=${LUSTRE_DIR:-/cosma8/data/CHANGE_ME_PROJECT/$USER/eagle-rf-io}
 COMPILER_MODULE=gnu_comp/14.1.0
 MPI_MODULE=openmpi/5.0.3          # COSMA8: darshan-runtime refuses to load without an MPI module
 LIKWID_MODULE=likwid/5.5.1
@@ -34,6 +35,12 @@ DARSHAN_RUNTIME_MODULE=darshan-runtime/3.4.6
 DARSHAN_UTIL_MODULE=darshan-util/3.4.6
 
 set -u
+if [ -z "${DATA_ROOT:-}" ] && { [ -z "${EAGLE_DATA_ROOT:-}" ] || [ "${EAGLE_DATA_ROOT}" = CHANGE_ME ]; }; then
+  echo "Set EAGLE_DATA_ROOT to the EAGLE data directory (export it before sbatch)"; exit 1
+fi
+case "${LUSTRE_DIR:-} ${VAST_DIR:-}" in *CHANGE_ME*)
+  echo "Set LUSTRE_DIR / VAST_DIR (writable output folders) and --account before submitting"; exit 1;;
+esac
 HERE="$(pwd)"
 BENCH="$HERE/rf_benchmark.py"
 CPULIST="$HERE/cpulist.py"

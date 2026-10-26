@@ -19,7 +19,7 @@ Template: SHAREing-DRI/assessment-template, pre-assessment-report.md (Chapter 4 
 
 An internal review of a Random Forest regression code that predicts gas density profiles of
 haloes in the EAGLE cosmological simulations from global galaxy and halo properties. The
-submission is a single Python script provided by the code owner (a COSMA8 user in project dp004);
+submission is a single Python script provided by the code owner (a COSMA8 user in project d****);
 there is no repository or version tag. The benchmark is training on the EAGLE `L0100N1504`
 simulation at redshift 0. The assessment is performed by Fawada Qaiser (DiRAC / Durham
 University) as part of the SHAREing project (UKRI Digital Research Infrastructure, grant
@@ -127,7 +127,7 @@ These were found by reading the script before running it.
 
 | Issue | Effect | How it was handled |
 |---|---|---|
-| All paths hard-coded to the owner's directories (`/cosma8/data/dp004/dc-sori1/...`), including where outputs are written | Another user cannot run it; if they had write access, it would **overwrite the owner's saved model** | The original script was **not run**. A benchmark harness with configurable paths was used instead (below) |
+| All paths hard-coded to the owner's directories (`/cosma8/data/d****/dc-s***/...`), including where outputs are written | Another user cannot run it; if they had write access, it would **overwrite the owner's saved model** | The original script was **not run**. A benchmark harness with configurable paths was used instead (below) |
 | `plt.rc('text', usetex=True)` | Needs LaTeX. **Confirmed: COSMA8 compute nodes have no `latex`**, so the original script would crash at the very end of each run, after training and after writing the 7.3 GB model, losing the figure | Harness uses LaTeX only when it is installed (`run_baseline.sh` passes `--usetex` only if `latex` is found). The owner may run on a login node or load a TeX module; to be asked |
 | `test = True` prints arrays; the plotting section prints full prediction arrays | Terminal output during the run (an "assessment crime" in the guidebook) | Printing off by default in the harness (`--verbose` restores it) |
 | `n_jobs = 16` fixed | Cannot scale with the node | Made a harness argument |
@@ -195,7 +195,7 @@ architecture to account for.
 
 The COSMA8 system at Durham University (DiRAC Memory Intensive service) was used. All runs were
 on a single exclusive compute node (`m8138`) in the `cosma8` partition, submitted with the
-`dr004` project account. Processor details were recorded with `lscpu` inside the job:
+assessor's project account. Processor details were recorded with `lscpu` inside the job:
 
 | Specification | Per node |
 |---|---|
@@ -514,6 +514,7 @@ pip install numpy h5py scikit-learn joblib scipy matplotlib
 
 # 2. Smoke test (login node, seconds; not a measurement)
 cd scripts
+export EAGLE_DATA_ROOT=/path/to/eagle_data   # the owner's data directory (not published)
 python3 rf_benchmark.py 0100 1504 0 --outdir smoke --n-jobs 4 --n-estimators 10
 
 # 3. Find an account that can use the cosma8 partition
@@ -521,7 +522,8 @@ for a in $(sacctmgr -n show assoc user=$USER format=account); do
   echo -n "$a: "; sbatch --test-only -A $a -p cosma8 -N1 -t 00:05:00 --wrap=hostname 2>&1 | tail -1
 done
 
-# 4. Set --account, LBOX=0100, NPART=1504, Z=0 and the venv line in both job scripts, then:
+# 4. Set --account, LBOX=0100, NPART=1504, Z=0 and the venv line in both job scripts.
+#    EAGLE_DATA_ROOT (exported in step 2) is passed to the jobs by sbatch. Then:
 OUT_ROOT=/path/with/space sbatch run_baseline.sh            # ~2 min; writes a 7.3 GB model
 N_ESTIMATORS=1000 REPEATS=3 sbatch run_scaling.sh           # ~16 min
 
@@ -538,4 +540,3 @@ Practical problems met while doing this, and their fixes:
 | Not every project account may use the `cosma8` partition | `sbatch --test-only` loop in step 3 |
 | `nproc` reports 256 on a 128-core node (SMT) | `run_scaling.sh` now counts physical cores from `lscpu` |
 | A 7.3 GB model would fill the home directory | `OUT_ROOT` variable in `run_baseline.sh` |
-
