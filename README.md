@@ -49,6 +49,8 @@ double as worked examples for assessing other small, CPU-only Python codes.
 | `scripts/cpulist.py` | Builds pinning lists from the compute node's real CPU layout |
 | `scripts/run_strace.sh` | Slurm job: I/O cross-check with `strace -f -c -w` (a fallback when Darshan cannot be used), alternating with plain runs |
 | `scripts/summarise_strace.py` | Turns a `run_strace.sh` folder into per-run I/O times and C_I/O |
+| `scripts/make_report_plots.py` | Makes `images/intranode.png` and `images/summary.png` for the high-level report with the SHAREing `assessmenttemplate` package (needs Python ≥ 3.12) |
+| `images/` | Report figures and the SHAREing logo |
 | `scripts/summarise_highlevel.py` | Turns a high-level results folder into the rubric scores, tables, `times_pinned.csv` and `rubric_scores.csv` |
 | `results/` | Raw results of the COSMA8 runs |
 
