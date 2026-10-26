@@ -538,3 +538,4 @@ Practical problems met while doing this, and their fixes:
 | Not every project account may use the `cosma8` partition | `sbatch --test-only` loop in step 3 |
 | `nproc` reports 256 on a 128-core node (SMT) | `run_scaling.sh` now counts physical cores from `lscpu` |
 | A 7.3 GB model would fill the home directory | `OUT_ROOT` variable in `run_baseline.sh` |
+
