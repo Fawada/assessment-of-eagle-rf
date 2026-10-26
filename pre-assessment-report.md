@@ -12,8 +12,8 @@ Template: SHAREing-DRI/assessment-template, pre-assessment-report.md (Chapter 4 
 > CPU-only Python machine-learning code. Every number in it comes from a run that can be
 > repeated with the scripts in [`scripts/`](scripts/); the raw outputs are in
 > [`results/`](results/). Short "Method" notes explain *why* each step was done, so the same
-> approach can be reused for other codes. Items still open are marked **Pending** together with
-> the command that closes them.
+> approach can be reused for other codes. The only open items are the questions to the code
+> owner in Section 6.
 
 ## Assessment objective
 
@@ -49,11 +49,11 @@ UKRI1801), on COSMA8, between 18 and 19 October 2026.
 
 | Question (guidebook Chapter 4) | Answer |
 |---|---|
-| Does the benchmark run as a black box? | Yes, once paths are made configurable (the original hard-codes the owner's directories). Both baseline runs and all 24 scaling runs completed with exit code 0 |
+| Does the benchmark run as a black box? | Yes, once paths are made configurable and LaTeX plotting is made optional. The original script hard-codes the owner's directories and would **crash at the end of every run on a COSMA8 compute node**, which has no LaTeX. All benchmark runs completed with exit code 0 |
 | Is it a single well-defined benchmark? | Yes: one script, one training run, three arguments |
 | Is the result reproducible? | Yes: with the fixed random seed, the trained forest is bit-for-bit identical in every run and at every thread count (forest hash `5590010f3e7cacbb`) |
 | Best-case runtime under 10 minutes? | Yes: 85.5 s for the owner's full run; 8.7 s of training at 16 threads; 121 s of training on 1 thread |
-| Memory footprint | 8.7 GB peak, under 1% of a COSMA8 node: well below the guidebook's 20–80% guideline |
+| Memory footprint | 8.7 GB peak, 0.8% of a COSMA8 node's 1006 GiB: well below the guidebook's 20–80% guideline |
 | Parallelism | Shared-memory threads within one process (scikit-learn/joblib). No MPI, no GPU |
 | Where does the time go? | **84% writing outputs** (a 7.3 GB model file takes 68.8 s to save); 10% training |
 | Intra-node scaling (training) | Parallel efficiency 0.94 at 8 threads, 0.87 at 16, 0.74 at 32, 0.63 at 64 |
@@ -128,7 +128,7 @@ These were found by reading the script before running it.
 | Issue | Effect | How it was handled |
 |---|---|---|
 | All paths hard-coded to the owner's directories (`/cosma8/data/dp004/dc-sori1/...`), including where outputs are written | Another user cannot run it; if they had write access, it would **overwrite the owner's saved model** | The original script was **not run**. A benchmark harness with configurable paths was used instead (below) |
-| `plt.rc('text', usetex=True)` | Needs LaTeX on the compute node; if missing, the script crashes at the very end, after training | Harness uses LaTeX only when it is installed (`--usetex` is passed automatically by `run_baseline.sh` if `latex` is found) |
+| `plt.rc('text', usetex=True)` | Needs LaTeX. **Confirmed: COSMA8 compute nodes have no `latex`**, so the original script would crash at the very end of each run, after training and after writing the 7.3 GB model, losing the figure | Harness uses LaTeX only when it is installed (`run_baseline.sh` passes `--usetex` only if `latex` is found). The owner may run on a login node or load a TeX module; to be asked |
 | `test = True` prints arrays; the plotting section prints full prediction arrays | Terminal output during the run (an "assessment crime" in the guidebook) | Printing off by default in the harness (`--verbose` restores it) |
 | `n_jobs = 16` fixed | Cannot scale with the node | Made a harness argument |
 | `from scipy.stats import *` | Unused import; no performance effect | None needed |
@@ -181,7 +181,7 @@ Slurm jobs used (see [Reproducing this assessment](#reproducing-this-assessment)
 |---|---|---|
 | [`scripts/run_baseline.sh`](scripts/run_baseline.sh) | Owner's settings, twice: "full" (all outputs, as the original script) and "quiet" (no outputs) | 12186031 |
 | [`scripts/run_scaling.sh`](scripts/run_scaling.sh) | Training at 1–64 and 256 threads, 3 repeats each | 12186032 |
-| `run_scaling.sh` with `JOBS_LIST="128"` | Missing 128-thread point | 12187354 (**Pending**) |
+| `run_scaling.sh` with `JOBS_LIST="128"` | 128-thread point (one thread per physical core) | 12187354 (completed; result belongs to the high-level intra-node rubric) |
 
 ### Reference architecture
 
@@ -205,10 +205,10 @@ on a single exclusive compute node (`m8138`) in the `cosma8` partition, submitte
 | Cores | 128 physical (64 per socket) |
 | Hardware threads | 256 (SMT: 2 threads per core) |
 | NUMA domains | 8 (16 cores each) |
-| Clock speed per CPU | **Pending**: `grep MHz baseline_12186031/environment.txt` |
-| RAM | **Pending**: `free -g` section of `baseline_12186031/environment.txt` (COSMA8 documentation states 1 TB) |
+| Clock speed per CPU | 2.6 GHz base, up to 3.3 GHz boost (AMD specification for the EPYC 7H12; `lscpu` on the node did not report a frequency) |
+| RAM | 1006 GiB (`free -g` in the job), i.e. about 1 TB; 7 GiB swap |
 | Output filesystem used | `/cosma/apps`: VAST, NFS mount (958 TB free at the time) |
-| Input filesystem | `/cosma8/data` (Lustre; to confirm with `df -T /cosma8/data`) |
+| Input filesystem | `/cosma8` (Lustre, `df -T`; 80% full at the time) |
 
 Two hardware facts matter for interpreting the results:
 
@@ -235,8 +235,17 @@ and in `environment.txt` (`pip freeze`).
 
 | Package | Version |
 |---|---|
-| Python, numpy, h5py, scikit-learn, joblib, scipy, matplotlib | **Pending**: `python3 -c "import json; print(json.load(open('<run>/quiet/result_quiet.json'))['versions'])"` |
-| LaTeX available on compute node | **Pending**: `latex` line of `environment.txt` |
+| Python | 3.12.4 |
+| numpy | 2.5.4 |
+| h5py | 3.16.0 |
+| scikit-learn | 1.9.1 |
+| joblib | 1.6.0 |
+| scipy | 1.18.1 |
+| matplotlib | 3.11.2 |
+| LaTeX on compute node | **Not installed** (`latex` not found) |
+
+Versions are taken from the `versions` field of the result JSON, which the harness records
+automatically on every run.
 
 The owner's library versions are unknown; they should be asked for `pip freeze` to confirm the
 assessment environment matches theirs.
@@ -297,10 +306,22 @@ halo. A 10-tree test run produced 522,608 nodes (about 52,000 per tree) and reac
 maximum depth of 32. Every node stores a 9-value profile, so the 10-tree forest's stored
 profiles alone took 37.6 MB.
 
-Scaled to 1000 trees this predicts about 52 million nodes, 3.8 GB of stored profiles plus a
-similar amount of tree structure: about 7 GB. The saved model was **7.3 GB**, consistent
-with this estimate. Measured node count for 1000 trees: **Pending**,
-`python3 -c "import json; print(json.load(open('<run>/full/result_full.json'))['model'])"`.
+Scaled to 1000 trees this predicts about 52 million nodes and about 7 GB. Measured for the full
+1000-tree forest:
+
+| Quantity | Value |
+|---|---|
+| Nodes | 53,681,708 (about 53,700 per tree) |
+| Maximum depth reached | 32 (the limit) |
+| Stored profiles (9 values × 8 bytes = 72 bytes per node) | 3.87 GB |
+| Remaining tree structure (split feature, threshold, children, counts) | ~3.4 GB, i.e. 64 bytes per node |
+| **Saved model file** | **7.3 GB** |
+
+So the model size is fully explained by the number of nodes: about 136 bytes per node, of which
+72 are the stored profile.
+
+> **Method note.** Estimating model size from a 10-tree run and checking it against the real
+> file is cheap and catches surprises (such as a home-directory quota) before the big run.
 
 ### How cost scales (from the algorithm)
 
@@ -328,7 +349,7 @@ off. Raw output: [`results/scaling_12186032_summary.md`](results/scaling_1218603
 | 16 | 8.66 | 8.61–8.87 | 13.98 | 0.87 |
 | 32 | 5.10 | 4.97–5.23 | 23.73 | 0.74 |
 | 64 | 3.01 | 2.88–3.07 | 40.23 | 0.63 |
-| 128 | **Pending** (job 12187354) | | | |
+| 128 | Measured in job 12187354; reported in the high-level assessment | | | |
 | 256 (SMT) | 2.67 | 2.65–2.72 | 45.41 | 0.35 per physical core |
 
 *Speed-up = time on 1 thread ÷ time on N threads. Parallel efficiency = speed-up ÷ N (1.0 is
@@ -383,8 +404,7 @@ Almost all of the memory is the trained model; the input data occupy well under 
 memory rises slightly with thread count, probably because each thread holds its own working
 buffers while building a tree.
 
-At about 9 GB, the benchmark uses under 1% of a COSMA8 node's memory (**Pending**: confirm node
-RAM). The guidebook prefers benchmarks using 20–80% of node memory. Reaching that would need a
+At about 9 GB, the benchmark uses 0.8% of a COSMA8 node's 1006 GiB. The guidebook prefers benchmarks using 20–80% of node memory. Reaching that would need a
 much larger problem than the code's real use case, so the benchmark is kept at the owner's size
 and the low memory use is recorded here as a characteristic of the code.
 
@@ -432,7 +452,7 @@ Two further observations:
   The most likely cause is Python freeing the 52-million-node model at exit. This is a
   hypothesis.
 - **Filesystem.** Outputs went to `/cosma/apps` (VAST/NFS); the owner writes to `/cosma8/data`
-  (Lustre, to confirm). Write speeds differ between filesystems, so the 68.8 s save is specific to
+  (Lustre). Write speeds differ between filesystems, so the 68.8 s save is specific to
   `/cosma/apps`. The I/O rubric should be measured on the owner's filesystem type.
 
 > **Method note.** Time each phase separately inside the run. A single wall-clock time would
@@ -455,7 +475,9 @@ None received yet. Questions for the owner:
    `L<Lbox>N<Npart>/eagle_z<z>.hdf5`, which has 19 radial bins.
 3. Do you need to save the full 7.3 GB model on every run? Saving takes 80% of the runtime.
 4. Your Python and library versions (`pip freeze`).
-5. Is 16 threads a deliberate choice? Measurements show it is close to the most efficient
+5. Where do you run the script? On COSMA8 compute nodes it would crash at the plotting step,
+   because LaTeX is not installed there (`usetex=True`).
+6. Is 16 threads a deliberate choice? Measurements show it is close to the most efficient
    setting; 64 threads trains 2.9× faster (3.0 s against 8.7 s) at lower efficiency.
 
 ## 7: Pre-assessment outcome
@@ -477,9 +499,8 @@ Points to carry forward into the high-level assessment:
 
 Open items before the high-level stage:
 
-- 128-thread point (job 12187354)
-- Hardware, memory and software-version details marked **Pending** above
 - Answers to the owner questions in Section 6
+- Add the 128-thread result (job 12187354, completed) to the high-level intra-node rubric
 
 ## Reproducing this assessment
 
